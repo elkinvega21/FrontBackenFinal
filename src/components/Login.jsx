@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import Swal from 'sweetalert2'; // Asegúrate de tener SweetAlert2 instalado
 
-const API_BASE_URL = 'http://localhost:8000'; // Tu URL base del backend
+const API_BASE_URL = 'http://localhost:8001'; // Tu URL base del backend
 
-const Login = ({ onLoginSuccess }) => {
+const Login = ({ onLoginSuccess, onGoToRegister }) => { // Recibe onGoToRegister
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,12 +110,15 @@ const Login = ({ onLoginSuccess }) => {
           </button>
         </form>
 
-        {/* Opcional: Enlace a Registro (si tienes ese endpoint) */}
         <p className="mt-8 text-center text-sm text-gray-600">
           ¿No tienes una cuenta?{' '}
-          <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+          <button
+            type="button" // Es un botón para cambiar de vista, no para enviar formulario
+            onClick={onGoToRegister} // Llama a la prop para cambiar la vista
+            className="font-medium text-blue-600 hover:text-blue-500 focus:outline-none focus:underline"
+          >
             Regístrate aquí
-          </a>
+          </button>
         </p>
       </div>
     </div>

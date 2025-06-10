@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-// Importa el componente Login
 import Login from './components/Login';
-import Swal from 'sweetalert2'; // Asegúrate de tener SweetAlert2 instalado
+import Register from './components/Register'; // Importa el componente de registro
+import Swal from 'sweetalert2';
 
-// Importa los componentes de Recharts y otros necesarios para tu dashboard (el resto de tu App.jsx original)
+// Importa los componentes de Recharts y otros necesarios para tu dashboard
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// Componente principal de la aplicación
 const App = () => {
-  // Estado para la autenticación
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // true si el usuario está logueado
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Cambiado a false por defecto
+  const [showRegister, setShowRegister] = useState(false); // Cambiado a false para mostrar Login primero
 
   // Estado y lógica del Dashboard original
   const [selectedFile, setSelectedFile] = useState(null);
@@ -19,14 +18,13 @@ const App = () => {
   const [categoryDistribution, setCategoryDistribution] = useState([]);
   const [backendReady, setBackendReady] = useState(false);
 
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL = 'http://localhost:8001';
 
   // Verifica el token al cargar la aplicación para mantener la sesión
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (token) {
-      // Aquí podrías hacer una petición a /api/v1/auth/me para validar el token
-      // Por ahora, asumimos que si hay token, el usuario está autenticado
+      // En una aplicación real, aquí validarías el token con una API de backend (ej. /auth/me)
       setIsAuthenticated(true);
     }
   }, []);
@@ -45,7 +43,7 @@ const App = () => {
             icon: 'error',
             title: 'Error de Conexión',
             text: `No se pudo conectar al backend. Asegúrate de que FastAPI esté corriendo en ${API_BASE_URL}.`,
-            footer: '<a href="http://localhost:8000/api/docs" target="_blank">Ver documentación de la API</a>'
+            footer: '<a href="http://localhost:8001/docs" target="_blank">Ver documentación de la API</a>' // Corregida la URL
           });
         }
       } catch (error) {
@@ -54,7 +52,7 @@ const App = () => {
           icon: 'error',
           title: 'Error de Red',
           text: `No se pudo alcanzar el backend. Asegúrate de que FastAPI esté corriendo en ${API_BASE_URL}.`,
-          footer: '<a href="http://localhost:8000/api/docs" target="_blank">Ver documentación de la API</a>'
+          footer: '<a href="http://localhost:8001/docs" target="_blank">Ver documentación de la API</a>'
         });
         console.error("Error checking backend health:", error);
       }
@@ -64,6 +62,13 @@ const App = () => {
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
+    setShowRegister(false); // Asegúrate de que no se muestre el registro si vienes del login
+  };
+
+  const handleRegisterSuccess = () => {
+    // Aquí puedes mostrar un mensaje de éxito si SweetAlert2 no lo hizo ya
+    // Swal.fire('Cuenta Creada', 'Ahora puedes iniciar sesión con tu nueva cuenta.', 'success');
+    setShowRegister(false); // Después del registro exitoso, vuelve a la vista de Login
   };
 
   const handleLogout = () => {
@@ -129,7 +134,6 @@ const App = () => {
     formData.append('file', selectedFile);
 
     try {
-      // Incluimos el token de autenticación en los headers
       const token = localStorage.getItem('access_token');
       const tokenType = localStorage.getItem('token_type');
 
@@ -169,6 +173,7 @@ const App = () => {
           console.error('Error del backend:', errorResult);
           Swal.fire('Error', errorMessage, 'error');
         } catch (jsonError) {
+          // If response is not JSON (e.g., 500 Internal Server Error with HTML)
           console.error('Error del backend (no JSON):', await response.text());
           Swal.fire('Error', 'Ha ocurrido un error inesperado en el servidor. Por favor, inténtalo de nuevo.', 'error');
         }
@@ -204,11 +209,18 @@ const App = () => {
   };
   // --- Fin Lógica del Dashboard ---
 
-  // Renderiza el Login si no está autenticado, de lo contrario, el Dashboard
+  // Lógica de Renderizado: Mostrar Login, Registro o Dashboard
   if (!isAuthenticated) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
+    if (showRegister) {
+      // Pasa onGoToLogin a Register para que pueda volver al login
+      return <Register onRegisterSuccess={handleRegisterSuccess} onGoToLogin={() => setShowRegister(false)} />;
+    } else {
+      // Pasa onGoToRegister a Login para que pueda ir al registro
+      return <Login onLoginSuccess={handleLoginSuccess} onGoToRegister={() => setShowRegister(true)} />;
+    }
   }
 
+  // Si está autenticado, muestra el Dashboard
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
       {/* Botón de Cerrar Sesión */}
@@ -318,7 +330,7 @@ const App = () => {
           <div className="p-8 border border-teal-400 rounded-lg bg-teal-50/70 backdrop-blur-sm shadow-inner">
             <h2 className="text-3xl font-bold text-teal-800 mb-5 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 5h18a2 2 0 012 2v10a2 2 0 01-2 2H3a2 2 0 01-2-2V7a2 2 0 012-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 5h18a2 2 0 012 2v10a2 2 0 01-2-2V7a2 2 0 012-2z" />
               </svg>
               Distribución de Categorías de Potencial
             </h2>
